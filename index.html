@@ -1,0 +1,226 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Для Адианы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Caveat:wght@600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+  /* ============================================================
+     что менять — см. блок CONFIG внизу в <script>
+     ============================================================ */
+  :root{
+    --paper:      #f7f1e6;
+    --paper-back: #efe4cd;
+    --paper-dark: #241a1f;
+    --plum:       #3a2b30;
+    --heart:      #c23b3b;
+    --cream-text: #f2e6d8;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#1a1114; font-family:'Cormorant Garamond', serif; color:var(--plum); }
+
+  .stage{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:48px 16px; }
+
+  .book{
+    position:relative;
+    width:min(480px, 92vw);
+    height:min(660px, 82vh);
+    display:flex;
+  }
+
+  /* корешок книги */
+  .spine{
+    width:16px;
+    border-radius:6px 0 0 6px;
+    background: linear-gradient(90deg,#120c0e,#2c2024);
+    box-shadow: 0 20px 50px rgba(0,0,0,.55);
+    flex-shrink:0;
+  }
+
+  .pages{
+    position:relative;
+    flex:1;
+    perspective: 2200px;
+    border-radius: 0 6px 6px 0;
+    overflow:hidden;
+    box-shadow: 0 24px 55px rgba(0,0,0,.5);
+  }
+
+  /* страница, лежащая внизу (открывается после переворота) */
+  .under{
+    position:absolute; inset:0;
+    background: var(--paper-dark);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 38px 30px;
+  }
+
+  /* переворачивающийся лист */
+  .leaf{
+    position:absolute; inset:0;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    transition: transform 1.15s cubic-bezier(.62,.04,.35,1);
+    z-index: 3;
+  }
+  .leaf.flipped{ transform: rotateY(-178deg); }
+
+  .face{
+    position:absolute; inset:0;
+    backface-visibility:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 38px 30px;
+  }
+  .face-front{
+    background: var(--paper);
+    z-index:2;
+  }
+  .face-back{
+    background: var(--paper-back);
+    transform: rotateY(180deg);
+    background-image: repeating-linear-gradient(180deg, rgba(0,0,0,.02) 0px, rgba(0,0,0,.02) 1px, transparent 1px, transparent 26px);
+  }
+
+  /* лёгкая тень на сгибе, всегда чуть заметна для объёма */
+  .pages::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(90deg, rgba(0,0,0,.16), transparent 10%);
+    pointer-events:none;
+    z-index:5;
+  }
+
+  /* -------- содержимое страницы 1 -------- */
+  .heart{
+    font-size:60px; color:var(--heart); line-height:1; margin-bottom:20px;
+    filter: drop-shadow(0 6px 10px rgba(194,59,59,.35));
+  }
+  .dedication{ font-size:36px; font-weight:600; line-height:1.2; text-align:center; }
+  .dedication .name{
+    font-family:'Caveat', cursive; font-size:1.35em; color:var(--heart); display:block; margin-top:4px;
+  }
+  .hint{
+    position:absolute; bottom:26px; left:0; right:0;
+    text-align:center;
+    font-family:'Caveat', cursive; font-size:19px; color:#9a8b81;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .hint svg{ animation: nudge 1.6s ease-in-out infinite; }
+  @keyframes nudge{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(5px); } }
+
+  /* -------- содержимое страницы 2 -------- */
+  .scene-label{
+    font-family:'Inter',sans-serif; font-size:11px; letter-spacing:.06em; color:#c9a58f;
+    margin-bottom:10px;
+  }
+  .scene-title{ font-family:'Caveat',cursive; font-size:25px; color:var(--cream-text); text-align:center; margin-bottom:16px; }
+  .video-wrap{
+    width:100%; aspect-ratio:16/9; border-radius:10px; overflow:hidden;
+    box-shadow:0 14px 30px rgba(0,0,0,.4); background:#000;
+  }
+  .video-wrap iframe{ width:100%; height:100%; border:0; display:block; }
+  .timecode-link{
+    display:block; margin-top:14px; text-align:center;
+    font-family:'Inter',sans-serif; font-size:12.5px; color:#c9a58f; text-decoration:none;
+    border-bottom:1px solid transparent;
+  }
+  .timecode-link:hover{ border-bottom-color:#c9a58f; }
+
+  .back-hint{
+    position:absolute; top:20px; left:24px;
+    font-family:'Inter',sans-serif; font-size:12px; color:#a4938a;
+    cursor:pointer; display:flex; align-items:center; gap:5px;
+    z-index:6;
+  }
+  .back-hint:hover{ color:#c9a58f; }
+
+  .corner-btn{
+    position:absolute; bottom:20px; right:24px;
+    width:38px; height:38px; border-radius:50%;
+    background: rgba(58,43,48,.06);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition: background .2s ease;
+  }
+  .corner-btn:hover{ background: rgba(58,43,48,.12); }
+
+  @media (max-width:480px){
+    .dedication{ font-size:30px; }
+    .heart{ font-size:50px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="book">
+    <div class="spine"></div>
+
+    <div class="pages">
+
+      <!-- СТРАНИЦА 2 (открывается после переворота) -->
+      <div class="under">
+        <div class="back-hint" id="backHint">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L3 6l5 4" stroke="#a4938a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          назад
+        </div>
+        <div class="scene-label">НАША СЦЕНА</div>
+        <div class="scene-title" id="sceneTitleSlot">момент, который напомнил мне о тебе</div>
+        <div class="video-wrap">
+          <iframe id="movieFrame" src="" title="movie moment" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <a class="timecode-link" id="fallbackLink" href="#" target="_blank" rel="noopener">если видео не проигрывается — открыть по ссылке</a>
+      </div>
+
+      <!-- ПЕРЕВОРАЧИВАЮЩИЙСЯ ЛИСТ: СТРАНИЦА 1 -->
+      <div class="leaf" id="leaf">
+        <div class="face face-front" id="flipTrigger">
+          <div class="heart">❤</div>
+          <div class="dedication">Для<span class="name" id="nameSlot">Адианы</span></div>
+          <div class="hint">
+            переверни страницу
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M1 6h13M9 1l5 5-5 5" stroke="#9a8b81" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="face face-back"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ЗАПОЛНИ ЭТИ ДАННЫЕ
+   ============================================================ */
+const CONFIG = {
+  name: "Адианы",
+  sceneTitle: "Маленькая часть мои мыслей про тебя эжим",
+  youtubeId: "https://youtube.com/shorts/WDeOO7DqcLM?si=XBb7aaSXOr8e6Ehk",
+};
+
+/* ============================== логика ============================== */
+document.getElementById('nameSlot').textContent = " " + CONFIG.name;
+document.getElementById('sceneTitleSlot').textContent = CONFIG.sceneTitle;
+
+const embedSrc = `https://www.youtube.com/embed/${CONFIG.youtubeId}?start=${CONFIG.startSeconds}&rel=0`;
+const watchLink = `https://www.youtube.com/watch?v=${CONFIG.youtubeId}&t=${CONFIG.startSeconds}s`;
+document.getElementById('fallbackLink').href = watchLink;
+
+const leaf = document.getElementById('leaf');
+const frame = document.getElementById('movieFrame');
+
+document.getElementById('flipTrigger').addEventListener('click', () => {
+  leaf.classList.add('flipped');
+  if(!frame.src) frame.src = embedSrc;
+});
+
+document.getElementById('backHint').addEventListener('click', () => {
+  leaf.classList.remove('flipped');
+});
+</script>
+
+</body>
+</html>
